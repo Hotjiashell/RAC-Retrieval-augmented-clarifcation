@@ -482,8 +482,7 @@ def main(cfg: DictConfig):
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.load_directory)
     tokenizer.padding_side = "left"
     model = AutoModelForCausalLM.from_pretrained(
-        cfg.model.name,
-        # cfg.model.uncond_save_directory,
+        cfg.model.uncond_save_directory,
         device_map="balanced",
         torch_dtype=torch.bfloat16,
         trust_remote_code=True,

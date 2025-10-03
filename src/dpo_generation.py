@@ -142,11 +142,6 @@ def evaluate_metrics(
     """
     Evaluate the model using the given metrics
     """
-    # rouge = evaluate.load("rouge")
-    # bleu = evaluate.load("bleu")
-    # exact_match = evaluate.load("exact_match")
-    # meteor = evaluate.load("meteor")
-    # bertscore = evaluate.load("bertscore")
 
     result_df = pd.read_json(dataset_path, lines=True, orient="records")
     data_formatter = PassageClarificationPromptFormatter(
@@ -173,13 +168,6 @@ def evaluate_metrics(
     mixture_decoder = None
     if mixture is not None:
         pass
-        # mixture_decoder = MixtureDecoder(
-        #     model=finetuned_model,
-        #     unconditional_model=model,
-        #     mixture_alpha=cfg.mixture.alpha,
-        #     mixture_mode="hard",
-        # )
-
     if dpo_model is not None:
         output_path = cfg.dataset.dpo_dataset
     else:
@@ -197,19 +185,6 @@ def evaluate_metrics(
     print(test_dataset[0])
     with open(output_path, "w") as f:
         pass
-    # for start in range(0, num_samples, batch_size):
-    #     end = min(start + batch_size, num_samples)
-    #     batch = test_dataset.select(range(start, end))
-
-    #     clarifications_batch = generate_clarifications_parallel(
-    #         batch,
-    #         model=model,
-    #         tokenizer=tokenizer,
-    #         finetuned_model=finetuned_model,
-    #         dpo_model=dpo_model,
-    #         mixture_decoder=mixture_decoder,
-    #         num_workers=20,
-    #     )
     for start in tqdm(range(0, num_samples, batch_size), desc="Generating clarifications (batched)"):
         # for start in range(0, num_samples, batch_size):
         end = min(start + batch_size, num_samples)
@@ -227,7 +202,6 @@ def evaluate_metrics(
             max_new_tokens=cfg.run.max_new_tokens
         )
 
-        # clarifications_all.extend(clarifications_batch)
 
         if cfg.mode == "generate":
 
@@ -297,19 +271,6 @@ def main(cfg: DictConfig):
     tokenizer = AutoTokenizer.from_pretrained(cfg.dpo.dpo_directory)
     tokenizer.padding_side = "left"
 
-    # model = AutoModelForCausalLM.from_pretrained(
-    #     cfg.model.name,
-    #     device_map="balanced",
-    #     torch_dtype=torch.bfloat16,
-    #     trust_remote_code=True,
-    # )
-    # finetuned_model = AutoModelForCausalLM.from_pretrained(
-    #     cfg.model.load_directory,
-    #     device_map="balanced",
-    #     torch_dtype=torch.bfloat16,
-    #     trust_remote_code=True,
-    # )
-
     dpo_model = AutoModelForCausalLM.from_pretrained(
         cfg.dpo.dpo_directory,
         device_map="balanced",
@@ -317,14 +278,6 @@ def main(cfg: DictConfig):
         trust_remote_code=True,
     )
 
-    # if tokenizer.pad_token is None:
-    #     tokenizer.add_special_tokens({"pad_token": cfg.model.pad_token})
-    #     tokenizer.add_special_tokens(
-    #         {"additional_special_tokens": [cfg.model.response_template]}
-    #     )
-    # model.resize_token_embeddings(len(tokenizer))
-    # finetuned_model.resize_token_embeddings(len(tokenizer))
-    # dpo_model.resize_token_embeddings(len(tokenizer))
     dpo_model.eval()
 
     mean_scores = evaluate_metrics(

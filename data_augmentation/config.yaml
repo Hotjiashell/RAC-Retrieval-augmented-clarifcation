@@ -1,0 +1,37 @@
+environment:
+  CUDA_DEVICE_ORDER: "PCI_BUS_ID"
+  CUDA_VISIBLE_DEVICES: "0,1,2"
+  HF_HOME: "/data/user/.cache/"
+  JAVA_HOME: "~/java/jdk21"
+
+indexes:
+  qulac:
+    - "/data/user/indexes/clueweb09-catb"
+  default:
+    - "/data/user/indexes/clueweb09-catb"
+    - "/data/user/indexes/clueweb12"
+
+paths:
+  base_dir: "/data/user"
+
+
+datasets:
+  base_dir: "Your/Base/Directory"
+  qulac: "query_rewriting_outputs/Qulac_rewritten.json"
+  clariq_train: "query_rewriting_outputs/ClariQ_train_rewritten.json"
+  clariq_dev: "query_rewriting_outputs/ClariQ_dev_rewritten.json"
+  clariqfkw_train: "query_rewriting_outputs/ClariQfkw_train_rewritten.json"
+  clariqfkw_dev: "query_rewriting_outputs/ClariQfkw_dev_rewritten.json"
+
+relevance_files:
+  clariq_train: "ClariQ/data/train.qrel"
+  clariq_dev: "ClariQ/data/dev.qrel"
+  qulac: "qulac/data/qulac/faceted.qrel"
+
+settings:
+  dataset_name: "ClariQn"
+  dataset_mode: "train"
+  level_type: "full"     # options: full, level 1, level 2, level 3, level 4
+  indexation_type: "clustered"  # flat / clustered
+  retrieval_type: "dense"       # sparse / dense
+  duplicate: false
