@@ -70,7 +70,6 @@ model:
   uncond_save_directory: uncond_sft_${model.name}_${dataset.name}_split_${dataset.train_test_split}_lr_${model.learning_rate}_epoch_${model.num_epochs}
   save_directory: checkpoint_sft_${model.name}_${dataset.name}_split_${dataset.train_test_split}_QLORA_${model.Qlora}_lr_${model.learning_rate}_epoch_${model.num_epochs}
   dpo_directory: checkpoint_dpo_${model.name}_${dataset.name}_split_${dataset.train_test_split}_alpha${mixture.alpha}_QLORA_${model.Qlora}_lr_${model.learning_rate}_epoch_${model.num_epochs}_${dpo.beta}_loss_${dpo.loss}
-  fsdp_config: /linkhome/rech/genisi01/uyy82al/.cache/huggingface/accelerate/default_config.yaml
 
 
 dpo:
