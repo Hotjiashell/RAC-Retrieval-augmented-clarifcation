@@ -8,10 +8,10 @@
 #SBATCH --constraint=h100 
 #SBATCH --cpus-per-task=10
 #SBATCH --time=4:00:00
-#SBATCH --account=ize@h100
+#SBATCH --account="your account"
 
 
-export WORK=/lustre/fswork/projects/rech/ize/uyy82al
+export WORK="your work directory"
 export CUDA_VISIBLE_DEVICES='0,1,2,3'
 export HYDRA_FULL_ERROR=1
 
@@ -20,19 +20,18 @@ export TRANSFORMERS_OFFLINE=1
 
 source $WORK/miniconda3/etc/profile.d/conda.sh
 conda activate few-shot-env
-cd $WORK/jz-sync/src/
+cd $WORK/RAC/src/
 
 module load cuda
 
 
-export HF_HOME='/lustre/fswork/projects/rech/ize/uyy82al/.cache/'
+export HF_HOME='huggingfacehomedirectory'
  
 # activation du mode offline
 export WANDB_MODE=offline
 
-conda activate few-shot-env
+conda activate rac_env
 which python
-python -c "import wandb; print('✅ wandb is available:', wandb.__version__)"
 
 run_sft=false
 run_finetune=false
@@ -91,7 +90,6 @@ fi
 
 if $run_finetune; then
   echo "Running fine-tuning..."
- # accelerate launch --multi_gpu --num_processes=4 generate_negative_facet.py $extra_args mode="train"
   python run_sft.py $extra_args mode="dpo_sft"
 fi
 
