@@ -30,16 +30,6 @@ def prepare_trainer(
     Prepare the trainer for the model
     """
 
-    # print("WandB is enabled, initializing...")
-    # # print(importlib.util.find_spec("wandb") is not None)
-
-    # run = wandb.init(
-    #     project=cfg.wandb.project,
-    #     name=cfg.wandb.run_name,
-    #     config=OmegaConf.to_container(cfg, resolve=True),
-    #     mode=cfg.wandb.mode
-    # )
-
     data_formatter = PassageClarificationPromptFormatter(
         response_template=response_template
     )
@@ -57,19 +47,7 @@ def prepare_trainer(
     else:
         result_df = result_df.apply(
             data_formatter.format_dataset_no_chat, axis=1)
-    # result_df["messages"] = result_df["text"]
     dataset = Dataset.from_pandas(result_df[["prompt", "completion"]])
-    # result_df["messages"] = result_df.apply(
-    #     lambda row: tokenizer.apply_chat_template(
-    #         row["text"],
-    #         tokenize=False,
-    #         add_generation_prompt=False,
-    #     ),
-    #     axis=1,
-    # )
-    # dataset = dataset.map(
-    #     lambda examples: formatting_prompts_func(examples, tokenizer), batched=True
-    # )
 
     if mode == "dpo_sft":
         train_test_split = dataset.train_test_split(
@@ -86,10 +64,7 @@ def prepare_trainer(
         )
 
         train_dataset = train_test_split["train"]
-        # train_test_split = train_dataset.train_test_split(
-        #     test_size=1.0 - cfg.dataset.train_test_split, seed=cfg.dataset.seed
-        # )
-        # train_dataset = train_test_split["train"]
+
 
     training_args = SFTConfig(
         report_to="wandb",
@@ -109,40 +84,22 @@ def prepare_trainer(
         logging_dir=cfg.model.logging_dir,
         save_steps=cfg.model.save_steps,
         max_length=cfg.model.max_seq_length,
-        # bf16=cfg.model.bf16,
 
-        # eval_steps=cfg.model.eval_steps,
         save_total_limit=cfg.model.save_total_limit,
-        # load_best_model_at_end=True,
         label_names=["labels"],
-        # fsdp=True,
-        # accelerator_config=accelerate_config,
-        # fsdp_strategy="full_shard",
-
-        # gradient_checkpointing_kwargs={"use_reentrant": False},
-        # ddp_find_unused_parameters=False,
         auto_find_batch_size=True,
         completion_only_loss=True,
     )
 
-    # Access the train and test datasets
 
-    # response_template = "\n<|assistant|>\n"
-    # collator = DataCollatorForCompletionOnlyLM(
-    #     response_template=data_formatter.response_template,
-    #     tokenizer=tokenizer,
-    #     mlm=False,
-    # )
     trainer = SFTTrainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=train_dataset,
-        # data_collator=collator,
         peft_config=peft_config,
         processing_class=tokenizer,
     )
-    # run.finish()
     return trainer
 
 
@@ -158,9 +115,7 @@ def main(cfg: DictConfig):
     # Load model and tokenizer
     tokenizer = AutoTokenizer.from_pretrained(cfg.model.tokenizer_name)
     model = AutoModelForCausalLM.from_pretrained(
-        # "gpt2",
         cfg.model.name,
-        # load_in_8bit=cfg.model.load_in_8bit,
         device_map="balanced",
         torch_dtype=torch.bfloat16,
         trust_remote_code=True,

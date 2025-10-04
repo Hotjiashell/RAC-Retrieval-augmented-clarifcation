@@ -11,11 +11,18 @@ conda activate rac_env
 
 # Install dependencies
 pip install -r requirements.txt
-pgsql
-Copy code
-
 ```
 
+Login to huggingface
+
+```bash
+huggingface-cli login --token "..."
+```
+
+or export the env variable
+
+```bash
+export HF_TOKEN=""
 
 ## 📊 Fine-tuning
 
@@ -30,11 +37,26 @@ To fine-tune the model, replace `DATASET_NAME` with your chosen dataset.
 
 ```bash
 
-bash job_run_src.sh --finetune --uncond model.name=meta-llama/Llama-3.1-8B model.tokenizer_name=meta-llama/Llama-3.1-8B model.Qlora=False dataset.name=DATASET_NAME model.learning_rate=5e-5 dataset.fine_tune_path=../DATASET/DATASET_train.json dataset.eval_dataset=../DATASET/DATASET_dev.jsonl dataset.train_test_split=0.5 model.num_epochs=1 model.per_device_train_batch_size=32 model.bf16=True model.lr_scheduler_type=linear model.gradient_checkpointing=True model.gradient_accumulation_steps=2 mixture.alpha=0.7 dpo.per_device_train_batch_size=32 dpo.num_epochs=2 dpo.learning_rate=4e-6 dpo.beta=0.2 dpo.bf16=True dpo.max_grad_norm=1.0 dpo.warmup_ratio=0.1 dpo.loss_type="dpo" dpo.loss="dpo" mixture.bs=32 mixture.num_variants=1 mixture.dpo_bs=32 run.gen_run_id=GEN_ID run.eval_run_id=RUN_ID model.chat=False dpo.untouched=0
+bash job_run_src.sh --finetune model.name=meta-llama/Llama-3.1-8B model.tokenizer_name=meta-llama/Llama-3.1-8B model.Qlora=False dataset.name=DATASET_NAME model.learning_rate=5e-5 dataset.fine_tune_path=../DATASET/DATASET_train.json dataset.eval_dataset=../DATASET/DATASET_dev.jsonl dataset.train_test_split=0.5 model.num_epochs=1 model.per_device_train_batch_size=32 model.bf16=True model.lr_scheduler_type=linear model.gradient_checkpointing=True model.gradient_accumulation_steps=2 mixture.alpha=0.7 dpo.per_device_train_batch_size=32 dpo.num_epochs=2 dpo.learning_rate=4e-6 dpo.beta=0.2 dpo.bf16=True dpo.max_grad_norm=1.0 dpo.warmup_ratio=0.1 dpo.loss_type="dpo" dpo.loss="dpo" mixture.bs=32 mixture.num_variants=1 mixture.dpo_bs=32 run.gen_run_id=GEN_ID run.eval_run_id=RUN_ID model.chat=False dpo.untouched=0
 
 ```
 
+## Second finetuning of the $Uncond$ model
+
+Second finetuning to train the model conditioned only on query.
+
+```bash
+bash job_run_src.sh --uncond model.name=meta-llama/Llama-3.1-8B model.tokenizer_name=meta-llama/Llama-3.1-8B model.Qlora=False dataset.name=DATASET_NAME model.learning_rate=5e-5 dataset.fine_tune_path=../DATASET/DATASET_train.json dataset.eval_dataset=../DATASET/DATASET_dev.jsonl dataset.train_test_split=0.5 model.num_epochs=1 model.per_device_train_batch_size=32 model.bf16=True model.lr_scheduler_type=linear model.gradient_checkpointing=True model.gradient_accumulation_steps=2 mixture.alpha=0.7 dpo.per_device_train_batch_size=32 dpo.num_epochs=2 dpo.learning_rate=4e-6 dpo.beta=0.2 dpo.bf16=True dpo.max_grad_norm=1.0 dpo.warmup_ratio=0.1 dpo.loss_type="dpo" dpo.loss="dpo" mixture.bs=32 mixture.num_variants=1 mixture.dpo_bs=32 run.gen_run_id=GEN_ID run.eval_run_id=RUN_ID model.chat=False dpo.untouched=0
+```
+
+
 ## Noisy data generation (rejected data samples $Cq^-$)
+
+Generate the noisy samples which will be used by the next step of the pipeline to train dpo 
+
+```bash
+bash job_run_src.sh --data-generation model.name=meta-llama/Llama-3.1-8B model.tokenizer_name=meta-llama/Llama-3.1-8B model.Qlora=False dataset.name=DATASET_NAME model.learning_rate=5e-5 dataset.fine_tune_path=../DATASET/DATASET_train.json dataset.eval_dataset=../DATASET/DATASET_dev.jsonl dataset.train_test_split=0.5 model.num_epochs=1 model.per_device_train_batch_size=32 model.bf16=True model.lr_scheduler_type=linear model.gradient_checkpointing=True model.gradient_accumulation_steps=2 mixture.alpha=0.7 dpo.per_device_train_batch_size=32 dpo.num_epochs=2 dpo.learning_rate=4e-6 dpo.beta=0.2 dpo.bf16=True dpo.max_grad_norm=1.0 dpo.warmup_ratio=0.1 dpo.loss_type="dpo" dpo.loss="dpo" mixture.bs=32 mixture.num_variants=1 mixture.dpo_bs=32 run.gen_run_id=GEN_ID run.eval_run_id=RUN_ID model.chat=False dpo.untouched=0
+```
 
 
 

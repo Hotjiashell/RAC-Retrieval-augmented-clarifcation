@@ -25,13 +25,6 @@ import wandb
 
 def dpo(cfg, model, ref_model, tokenizer, peft_config):
 
-    # run = wandb.init(
-    #     project=cfg.wandb.project,
-    #     name=cfg.wandb.run_name,
-    #     config=OmegaConf.to_container(cfg, resolve=True),
-    #     mode=cfg.wandb.mode
-    # )
-
     attn_kwargs = {}
     if is_ampere_gpu():
         # attn_kwargs["attn_implementation"] = "flash_attention_2"
@@ -69,14 +62,12 @@ def dpo(cfg, model, ref_model, tokenizer, peft_config):
         gradient_accumulation_steps=cfg.dpo.gradient_accumulation_steps,
         gradient_checkpointing=cfg.dpo.gradient_checkpointing,
         max_grad_norm=cfg.dpo.max_grad_norm,
-        # learning_rate=cfg.model.learning_rate,
         learning_rate=cfg.dpo.learning_rate,
         lr_scheduler_type=cfg.dpo.lr_scheduler_type,
         warmup_ratio=cfg.dpo.warmup_ratio,
         optim=cfg.dpo.optim,
         logging_steps=cfg.dpo.logging_steps,
         num_train_epochs=cfg.dpo.num_epochs,
-        # force_use_ref_model=True,
         save_steps=cfg.dpo.save_steps,
         max_length=cfg.dpo.max_seq_length,
         bf16=cfg.dpo.bf16,
@@ -85,30 +76,18 @@ def dpo(cfg, model, ref_model, tokenizer, peft_config):
         auto_find_batch_size=True,
         report_to="wandb",
         run_name=cfg.wandb.run_name,
-        # loss_type=[cfg.dpo.loss_type],
-        # loss_type=["ipo"],
-        # loss_type=["ipo", "sft"],
-        # loss_weights=[0.5, 0.5],
-        # loss_weicfg.dpo.loss_weightsghts=cfg.dpo.loss_weights,
-        # rpo_alpha=cfg.dpo.rpo_alpha,
-        rpo_alpha=1.0,
+        loss_type=[cfg.dpo.loss_type, "sft"],
+        loss_weights=[0.5, 0.5],
+
     )
     trainer = DPOTrainer(
         model,
         ref_model,
         args=training_args,
-        # train_dataset=new_sample_dataset_hf,
         train_dataset=dataset,
-        # eval_dataset=dataset[script_args.dataset_test_split] if training_args.eval_strategy != "no" else None,
-        # processing_class=tokenizer,
         processing_class=tokenizer,
-        # data_collator=collator,
         peft_config=peft_config,
     )
-
-    # trainer.train()
-
-    # save_model(cfg, trainer, tokenizer, model, cfg.dpo.dpo_directory)
 
     return trainer
 

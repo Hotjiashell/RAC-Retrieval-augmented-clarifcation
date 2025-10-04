@@ -31,75 +31,6 @@ import gc
 import pickle
 
 
-# def generate_clarifications_batch(
-#     batch_dataset,
-#     tokenizer,
-#     finetuned_model
-# ):
-#     """
-#     Generate clarifications for a batch of examples using batch inference.
-#     """
-#     generation_config = GenerationConfig(
-#         do_sample=False,
-#         max_new_tokens=35,
-#         repetition_penalty=1.0,
-#         num_return_sequences=1,
-#         use_cache=True,
-#         pad_token_id=tokenizer.pad_token_id,
-#         eos_token_id=tokenizer.eos_token_id,
-#     )
-
-#     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-#     clarifications_list = []
-
-#     convs = batch_dataset["conv"]
-#     weak_convs = batch_dataset["weak_conv"]
-#     topics = batch_dataset["topic"]
-#     passages = batch_dataset["Passage"]
-#     ground_truths = batch_dataset["question"]
-
-#     input_texts = tokenizer.apply_chat_template(
-#         convs, tokenize=False, add_generation_prompt=True
-#     )
-
-#     input_encodings = tokenizer(
-#         input_texts,
-#         return_tensors="pt",
-#         padding=True,
-#         truncation=True,
-#     ).to(device)
-#     fine_tuned_output = finetuned_model.generate(
-#         input_ids=input_encodings["input_ids"],
-#         attention_mask=input_encodings["attention_mask"],
-#         generation_config=generation_config,
-#     )
-
-#     decoded_fine_tuned_output = tokenizer.batch_decode(
-#         fine_tuned_output,
-#         skip_special_tokens=True,
-#         clean_up_tokenization_spaces=True,
-#     )
-#     for i in range(len(convs)):
-#         clarification = {
-#             "ground-truth": [ground_truths[i]],
-#             "fine_tuned": [],
-#         }
-
-#         prompt = {
-#             "topic": [topics[i]],
-#             "Passage": [passages[i]],
-#         }
-#         clarification["fine_tuned"].append([
-#             extract_response(decoded_fine_tuned_output[i])]
-#         )
-
-#         clarifications_list.append({
-#             "clarifications": clarification,
-#             "prompt": prompt
-#         })
-
-#     return clarifications_list
 
 
 def generate_clarifications_batch(
@@ -119,7 +50,7 @@ def generate_clarifications_batch(
         top_p=0.9,
         max_new_tokens=max_new_tokens,
         repetition_penalty=1.0,
-        num_return_sequences=1,  # We handle repetition manually
+        num_return_sequences=1,
         use_cache=True,
         pad_token_id=tokenizer.pad_token_id,
         eos_token_id=tokenizer.eos_token_id,
@@ -217,7 +148,6 @@ def evaluate_metrics(
 
     test_dataset = dataset
 
-    # output_path = "sft_" + cfg.dataset.preference_dataset
     output_path = cfg.dataset.full_sft_eval_dataset
 
     output_dir = os.path.dirname(output_path)
@@ -246,7 +176,6 @@ def evaluate_metrics(
             max_new_tokens=cfg.run.max_new_tokens
         )
 
-        # clarifications_all.extend(clarifications_batch)
 
         if cfg.mode == "generate-full-sft":
             clarifications_all = []
@@ -320,45 +249,6 @@ def main(cfg: DictConfig):
     # Load dataset
     dataset = pd.read_json(dataset_path, lines=True, orient="records")
 
-    # Evaluate
-    # comparison_results = {}
-    # file_results = {}
-    # for column in dataset.columns[1:]:
-    #     print(f"Processing column: {column}")
-    #     references = dataset.iloc[:, 0].tolist()
-    #     predictions = dataset[column].tolist()
-    #     data_dict = {"references": references, "predictions": predictions}
-    #     results = evaluator.score(data_dict)
-    #     means = evaluator.compute_mean(results)
-    #     file_results[column] = means
-
-    # # Organize results into DataFrame
-    # organized_results = []
-    # for column, metrics in file_results.items():
-    #     row = {"File": os.path.basename(dataset_path), "Column": column}
-    #     row.update(metrics)
-    #     organized_results.append(row)
-
-    # results_df = pd.DataFrame(organized_results)
-
-    # print(results_df)
-    # for file, columns in comparison_results.items():
-    #     for column, metrics in columns.items():
-    #         row = {"File": file, "Column": column}
-    #         row.update(metrics)
-    #         organized_results.append(row)
-
-    # results_df = pd.DataFrame(organized_results)
-
-    # print(results_df)
-
-    # os.makedirs(os.path.dirname(cfg.dataset.metrics), exist_ok=True)
-
-    # with open(f"{cfg.dataset.metrics}.pkl", "wb") as f:
-    #     pickle.dump(results_df, f)
-
-    # with open(f"{cfg.dataset.metrics}.txt", "w") as f:
-    #     f.write(results_df.to_string(index=False))
 
     max_scores_list = []
 
@@ -393,8 +283,6 @@ def main(cfg: DictConfig):
     # Save results
     os.makedirs(os.path.dirname(cfg.dataset.metrics), exist_ok=True)
 
-    # with open(f"{cfg.dataset.metrics}.pkl", "wb") as f:
-    #     pickle.dump(results_df, f)
 
     with open(f"{cfg.dataset.metrics}.txt", "w") as f:
         f.write(results_df.to_string(index=False))
