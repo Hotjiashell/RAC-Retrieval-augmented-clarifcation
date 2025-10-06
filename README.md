@@ -42,6 +42,7 @@ or export the env variable
 
 ```bash
 export HF_TOKEN=""
+```
 
 ## 📊 Fine-tuning
 
