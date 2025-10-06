@@ -1,5 +1,24 @@
 # RAC-Retrieval-augmented-clarifcation
 
+Clarification questions help conversational search systems resolve ambiguous or underspecified queries. However, most prior approaches risk asking questions that are not grounded in the corpus, leading to misleading interactions. We propose RAC (Retrieval-Augmented Clarification), a framework for generating faithful clarifying questions.
+
+<p align="center">
+  <img src="assets/rac_example.pdf" alt="Overview of RAC." width="600">
+  <br>
+  <em>Figure 1. Overview of RAC. Given an ambiguous user query, the system first retrieves the top-$k$ passages ((a) passage retrieval). A mixture of the fine-tuned model and the base model is then used to generate unfaithful clarifying questions. Both faithful and unfaithful clarifying questions are subsequently leveraged for preference optimization via the DPO algorithm ((b) training pipeline). During inference, the trained model directly generates faithful clarifying questions.</em>
+</p>
+
+
+
+In the following we will go through the execution of each component of RAC pipeline.
+
+<p align="center">
+  <img src="assets/rac_pipeline.pdf" alt="RAC training and data generation Pipeline" width="600">
+  <br>
+  <em>Figure 2. Overview of RAC training pipeline.</em>
+</p>
+
+
 
 
 ## 🚀 Installation & Environment Setup
