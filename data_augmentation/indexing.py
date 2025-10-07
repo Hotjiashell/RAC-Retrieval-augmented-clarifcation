@@ -4,7 +4,7 @@ import pandas as pd
 from tqdm import tqdm
 from pyserini.search.lucene import LuceneSearcher
 import subprocess
-from doc_split import segment_document
+from doc_split import chunk_document
 from utils import clean_wikipedia_text
 
 
@@ -28,7 +28,7 @@ def passage_chunking(results, dataset_name, dataset_mode, level_type, indexation
                     try:
                         content = json.loads(doc.raw()).get('contents', '')
                         content = clean_wikipedia_text(content)
-                        chunks = segment_document(content)
+                        chunks = chunk_document(content)
                         for i, chunk in enumerate(chunks):
                             passage = {
                                 'id': f"{doc.docid()}_P_{i}",

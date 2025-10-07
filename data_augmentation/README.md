@@ -4,7 +4,9 @@ This framework provides a modular pipeline for dataset preparation, passage segm
 
 It supports:
 
-✅ Multiple datasets (ClariQ, Qulac, ClariQ-FKw, etc.)
+✅ Multiple datasets (ClariQ, Qulac, ClariQ-FKw)
+
+✅ The datasets are already augmented with rewritten queries
 
 ✅ Sparse retrieval (Lucene BM25)
 
@@ -16,7 +18,7 @@ It supports:
 ## ⚙️ Installation
 
 ```bash
-cd query-retrieval-framework
+cd data_augmentation
 pip install -r requirements.txt
 
 #Install Pyserini (required for indexing & retrieval):
@@ -39,8 +41,6 @@ Example:
 environment:
   CUDA_DEVICE_ORDER: "PCI_BUS_ID"
   CUDA_VISIBLE_DEVICES: "0,1,2"
-  HTTP_PROXY: "192.168.0.100:3128"
-  HTTPS_PROXY: "192.168.0.100:3128"
   HF_HOME: "/data/user/.cache/"
   JAVA_HOME: "~/java/jdk21"
 
