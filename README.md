@@ -109,12 +109,7 @@ bash job_run_src.sh --metrics model.name=meta-llama/Llama-3.1-8B model.tokenizer
 ### Reference free metrics
 
 
-#### Align score 
-
-
----
-
-## 🧩 Input Format
+#### 🧩 Input Format
 
 Your dataset must be in **JSON Lines** format (`.json`) containing at least the following fields:
 
@@ -134,13 +129,48 @@ Example (`dataset.json`):
  "dpo": ["Are you looking for information about who wrote Harry Potter?"]}
 ```
 
+#### Adapted Align-score 
+
+```bash
+conda create -n alignscore python=3.10 -y
+cd src/evaluation/alignscore
+conda activate alignscore
+
+pip install -r requirements.txt
+python -m spacy download en_core_web_sm
+```
+
+##### Example command 
+
+
+
+For the Final dpo model
+
+```bash
+python align_eval_adapted.py \
+  --source dpo \
+  --dataset /path/to/generated_data.json
+```
+
+### Adapted Parent
+
+```bash
+conda activate rac_env
+```
+
+
+```bash
+python parent_metric.py \
+ --source dpo \
+  --dataset /path/to/generated_data.json
+```
+
+
 
 ## Disclaimer
 
 This repository assumes a SLURM-based cluster environment.
 Scripts include SLURM directives and commands; if your setup uses a different scheduler, please modify those parts to match your system’s job submission syntax.
 
-
-## Examples
 
 

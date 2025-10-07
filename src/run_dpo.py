@@ -35,13 +35,10 @@ def dpo(cfg, model, ref_model, tokenizer, peft_config):
         response_template=cfg.model.response_template
     )
 
-    # result_df = pd.read_json(
-    #     cfg.dataset.preference_dataset, lines=True, orient="records"
-    # )
-
     result_df = pd.read_json(
-        "/lustre/fswork/projects/rech/ize/uyy82al/jz-sync/llm_judging/pq3f_judge_finetuned_filtered.json", lines=True, orient="records"
+        cfg.dataset.preference_dataset, lines=True, orient="records"
     )
+
     if cfg.model.chat:
         result_df = result_df.apply(
             data_formatter.format_dataset_preference_tuning, axis=1)
