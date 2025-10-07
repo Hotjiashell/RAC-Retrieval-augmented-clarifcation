@@ -44,6 +44,11 @@ or export the env variable
 export HF_TOKEN=""
 ```
 
+## ⚙️ Configure Environment Variables in `job_run_src.sh`
+
+Before running the RAC pipeline, make sure you correctly configure the following environment variables.
+These define where your code, datasets, and model files live, as well as how your GPU and offline modes are handled.
+
 ## 📊 Fine-tuning
 
 To fine-tune the model, replace `DATASET_NAME` with your chosen dataset.

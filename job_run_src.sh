@@ -11,28 +11,43 @@
 #SBATCH --account="your account"
 
 
-export WORK="your work directory"
+# ============================================================
+#  Environment Setup
+# ============================================================
+
+# Path to your working directory
+export WORK="/home/username/projects/RAC"
+
+# Select which GPUs to use
 export CUDA_VISIBLE_DEVICES='0,1,2,3'
+
+# Show full Hydra stack traces for easier debugging
 export HYDRA_FULL_ERROR=1
 
+# Run Hugging Face transformers in offline mode
 export TRANSFORMERS_OFFLINE=1
 
-
+# Load conda environment
 source $WORK/miniconda3/etc/profile.d/conda.sh
-conda activate few-shot-env
+
+# Activate your main environment (example: 'few-shot-env' or 'rac_env')
+conda activate rac_env
+
+# Go to source directory
 cd $WORK/RAC/src/
 
+# Load CUDA module if required by your cluster
 module load cuda
 
+# Set Hugging Face home directory
+export HF_HOME="$WORK/huggingface_home"
 
-export HF_HOME='huggingfacehomedirectory'
- 
-# activation du mode offline
+# Disable W&B tracking (offline mode)
 export WANDB_MODE=offline
 
-conda activate rac_env
-which python
-
+# ============================================================
+#  Job Execution
+# ============================================================
 run_sft=false
 run_finetune=false
 run_uncond_sft=false
