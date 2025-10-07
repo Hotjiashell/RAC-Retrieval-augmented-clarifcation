@@ -135,7 +135,8 @@ Example (`dataset.json`):
 conda create -n alignscore python=3.10 -y
 cd src/evaluation/alignscore
 conda activate alignscore
-
+pip install -r requirements.txt
+cd ../../AlignScore/
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 ```
@@ -156,6 +157,8 @@ python align_eval_adapted.py \
 
 ```bash
 conda activate rac_env
+cd parent/
+pip install -r requirements.txt
 ```
 
 

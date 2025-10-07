@@ -2,7 +2,6 @@ absl-py==2.3.1
 aiohappyeyeballs==2.6.1
 aiohttp==3.12.15
 aiosignal==1.4.0
-alignscore @ file:///lustre/fswork/projects/rech/ize/uyy82al/AlignScore
 annotated-types==0.7.0
 asttokens==3.0.0
 async-timeout==5.0.1
