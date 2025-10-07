@@ -109,6 +109,31 @@ bash job_run_src.sh --metrics model.name=meta-llama/Llama-3.1-8B model.tokenizer
 ### Reference free metrics
 
 
+#### Align score 
+
+
+---
+
+## 🧩 Input Format
+
+Your dataset must be in **JSON Lines** format (`.json`) containing at least the following fields:
+
+```yaml
+| Field | Description |
+|-------|--------------|
+| `ground-truth` | Reference question or gold text (used for merging) |
+| `Passage` | List or string of passages retrieved for the question |
+| `dpo` / `sft` / `fine_tuned` | Model predictions to evaluate |
+
+```
+Example (`dataset.json`):
+
+```json
+{"ground-truth": "Who wrote the Harry Potter series?", 
+ "Passage": ["# J.K. Rowling is the author of the Harry Potter series."], 
+ "dpo": ["Are you looking for information about who wrote Harry Potter?"]}
+```
+
 
 ## Disclaimer
 
