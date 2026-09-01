@@ -1,9 +1,9 @@
 """RAC clarification policy adapted to Huawei ClarQ's native action protocol.
 
 RAC's original implementation trains a generator with passage-grounded
-clarification examples.  This module uses that inference-time idea directly:
-the policy receives a fixed set of passages retrieved from the initial user
-question and may ask a clarification only when it is grounded in that set.
+clarification examples. This module uses that inference-time idea directly:
+the policy receives Top-5 passages from the current retrieval state and may ask
+a clarification only when it is grounded in that evidence.
 """
 
 from __future__ import annotations
@@ -18,37 +18,21 @@ from clarq_eval.runner import serialize_search_results
 
 
 POLICY_NAME = "rac-clarq"
-POLICY_VERSION = "1.1"
-PROMPT_VERSION = "2026-08-31-initial-and-search-refreshed-top5-passages"
+POLICY_VERSION = "1.2"
+PROMPT_VERSION = "2026-09-01-native-tools-complete-user-language"
 INITIAL_PASSAGE_LIMIT = 5
 
 
-RAC_SYSTEM_PROMPT = """You are a retrieval-augmented clarification policy for a
-conversational case-retrieval agent.
+RAC_SYSTEM_PROMPT = """You are a retrieval-augmented clarification policy for a conversational case-retrieval agent.
 
-You receive the original user question, a conversation/tool trace, and the
-current set of passage evidence. The first evidence set was retrieved once
-from the original user question before this conversation started. Every later
-successful search_case refreshes the current evidence set with the new
-retrieval results. Passages are evidence for asking clarifying questions; they
-are not user-confirmed facts.
+You receive the original user question, a conversation/tool trace, and the current set of passage evidence. The first evidence set was retrieved once from the original user question before this conversation started. Every later successful search_case refreshes the current evidence set with the new retrieval results. Passages are evidence for asking clarifying questions; they are not user-confirmed facts.
 
 Use exactly one action at a time:
-- Call clarify_user only when one missing user-known fact would materially
-  change the relevant cases. Ask one concise, discriminative question. Every
-  specific entity, option, condition, or distinction in that question must be
-  supported by the current passages. Do not introduce assumptions or facts that
-  are absent from them. Do not repeat an answered question.
-- Call search_case when the request is specific enough. Its query may use only
-  the original request and confirmed user replies, never an inferred fact from
-  a passage.
-- Output exactly Complete only after at least one search_case result is
-  available and the latest cases are sufficient. Do not answer the technical
-  question yourself.
+- Call clarify_user only when one missing user-known fact would materially change the relevant cases. Ask one concise, discriminative question. Every specific entity, option, condition, or distinction in that question must be supported by the current passages. Do not introduce assumptions or facts that are absent from them. Do not repeat an answered question. Use the same language as the user; for example, use Chinese when the user speaks Chinese.
+- Call search_case when the request is specific enough. Its query may use only the original request and confirmed user replies, never an inferred fact from a passage. Use the same language as the user; for example, use Chinese when the user speaks Chinese.
+- Call Complete only after at least one search_case result is available and the latest cases are sufficient. Do not answer the technical question yourself.
 
-For clarify_user or search_case, make exactly one native tool call using the
-supplied tool definitions. Leave assistant text empty. For Complete, make no
-tool call and output exactly `Complete` with no explanation."""
+Make exactly one native tool call using the supplied tool definitions. This includes Complete: call `Complete` with an empty arguments object when the latest retrieved cases are sufficient. Leave assistant text empty. Do not write a tool-call JSON object or terminal action text in assistant content."""
 
 
 def _compact_text(value: Any, *, default: str = "", limit: int = 4_000) -> str:
@@ -128,10 +112,15 @@ def _normalized_model_response(response: dict[str, Any]) -> dict[str, Any]:
 
 def _normalize_tool_action(name: Any, arguments: Any) -> tuple[str, dict[str, str]]:
     action = _compact_text(name, limit=80)
-    if action not in {"clarify_user", "search_case"}:
-        raise PolicyProtocolError(f"Unsupported RAC action: {action!r}")
     if not isinstance(arguments, Mapping):
         raise PolicyProtocolError(f"RAC {action} arguments must be a JSON object")
+
+    if action.lower() == "complete":
+        if arguments:
+            raise PolicyProtocolError("RAC Complete must use empty action.arguments")
+        return "Complete", {}
+    if action not in {"clarify_user", "search_case"}:
+        raise PolicyProtocolError(f"Unsupported RAC action: {action!r}")
 
     field = "question" if action == "clarify_user" else "query"
     limit = 1_000 if field == "question" else 2_000
@@ -292,28 +281,14 @@ class RACPolicyClient:
             seed=seed,
         )
         parsed = parse_policy_response(_normalized_model_response(response))
-        if len(parsed.tool_calls) > 1:
-            raise PolicyProtocolError("RAC policy response must contain at most one native tool call")
-
-        if parsed.tool_calls:
-            if parsed.cleaned_content:
-                raise PolicyProtocolError("RAC tool-call responses must not include assistant text")
-            call = parsed.tool_calls[0]
-            action, arguments = _normalize_tool_action(call.name, call.arguments)
-            self._record_decision(action, arguments, len(passages), evidence_source)
-            return self._tool_response(action, arguments)
-
-        if not parsed.is_complete:
-            raise PolicyProtocolError("RAC terminal response must be exactly Complete")
-        self._record_decision("Complete", {}, len(passages), evidence_source)
-        return {
-            "choices": [
-                {
-                    "finish_reason": "stop",
-                    "message": {"content": "Complete", "tool_calls": []},
-                }
-            ]
-        }
+        if len(parsed.tool_calls) != 1:
+            raise PolicyProtocolError("RAC policy response must contain exactly one native tool call")
+        if parsed.cleaned_content:
+            raise PolicyProtocolError("RAC tool-call responses must not include assistant text")
+        call = parsed.tool_calls[0]
+        action, arguments = _normalize_tool_action(call.name, call.arguments)
+        self._record_decision(action, arguments, len(passages), evidence_source)
+        return self._tool_response(action, arguments)
 
     def _prompt_content(
         self,

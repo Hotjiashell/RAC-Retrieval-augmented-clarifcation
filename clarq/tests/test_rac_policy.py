@@ -17,7 +17,7 @@ for path in (CLARQ_DIR, EVAL_DIR):
 from clarq_eval.models import EvaluationSample  # noqa: E402
 from clarq_eval.parsing import PolicyProtocolError, parse_policy_response  # noqa: E402
 from clarq_eval.runner import EvaluationRunner, TOOLS  # noqa: E402
-from rac_policy import RACInitialPassageRetriever, RACPolicyClient  # noqa: E402
+from rac_policy import RAC_SYSTEM_PROMPT, RACInitialPassageRetriever, RACPolicyClient  # noqa: E402
 from rac_runner import RACTraceRunner  # noqa: E402
 from run_evaluation import DEFAULT_EVAL_DIR, _install_rac_adapter, _load_evaluator  # noqa: E402
 
@@ -126,7 +126,11 @@ class RACPolicyTests(unittest.TestCase):
                     tool_calls=[native_tool_call("search_case", {"query": "device issue Model X"})],
                     finish_reason="tool_calls",
                 ),
-                model_response("Complete", finish_reason="stop"),
+                model_response(
+                    None,
+                    tool_calls=[native_tool_call("Complete", {})],
+                    finish_reason="tool_calls",
+                ),
             ]
         )
         retriever = FakeRetriever()
@@ -162,6 +166,7 @@ class RACPolicyTests(unittest.TestCase):
         self.assertEqual("search_case", rac_metadata["current_evidence_source"])
         self.assertEqual("Target case", rac_metadata["current_passages"][0]["title"])
         self.assertTrue(all(not call["kwargs"]["enable_thinking"] for call in service.calls))
+        self.assertEqual("Complete", service.calls[0]["tools"][2]["function"]["name"])
         for call in service.calls[:2]:
             prompt = call["messages"][1]["content"]
             self.assertIn("Passage 1", prompt)
@@ -174,6 +179,63 @@ class RACPolicyTests(unittest.TestCase):
         self.assertEqual("initial_question", result["rac_policy"]["decisions"][0]["evidence_source"])
         self.assertEqual("search_case", result["rac_policy"]["decisions"][2]["evidence_source"])
         self.assertEqual(5, result["rac_policy"]["decisions"][0]["passage_count"])
+        self.assertEqual("Complete", result["rac_policy"]["decisions"][2]["action"]["name"])
+
+    def test_complete_is_normalized_as_an_empty_native_tool_call(self) -> None:
+        service = FakePolicyService(
+            [
+                model_response(
+                    None,
+                    tool_calls=[native_tool_call("complete", {})],
+                    finish_reason="tool_calls",
+                )
+            ]
+        )
+        retriever = RACInitialPassageRetriever(FakeRetriever(), content_chars=1_000)
+        retriever.begin_sample(SAMPLE)
+        retriever.search(SAMPLE.initial_question, 5)
+        policy = RACPolicyClient(service, retriever)
+
+        response = policy.policy_chat(
+            [{"role": "user", "content": SAMPLE.initial_question}],
+            tools=TOOLS,
+        )
+
+        turn = parse_policy_response(response)
+        self.assertEqual("Complete", turn.tool_calls[0].name)
+        self.assertEqual({}, turn.tool_calls[0].arguments)
+        self.assertEqual("Complete", policy.finish_sample()[0]["action"]["name"])
+
+    def test_complete_with_arguments_and_text_complete_are_rejected(self) -> None:
+        retriever = RACInitialPassageRetriever(FakeRetriever(), content_chars=1_000)
+        retriever.begin_sample(SAMPLE)
+        retriever.search(SAMPLE.initial_question, 5)
+
+        arguments_service = FakePolicyService(
+            [
+                model_response(
+                    None,
+                    tool_calls=[native_tool_call("Complete", {"reason": "done"})],
+                    finish_reason="tool_calls",
+                )
+            ]
+        )
+        with self.assertRaisesRegex(PolicyProtocolError, "empty action.arguments"):
+            RACPolicyClient(arguments_service, retriever).policy_chat(
+                [{"role": "user", "content": SAMPLE.initial_question}],
+                tools=TOOLS,
+            )
+
+        text_service = FakePolicyService([model_response("Complete", finish_reason="stop")])
+        with self.assertRaisesRegex(PolicyProtocolError, "exactly one native tool call"):
+            RACPolicyClient(text_service, retriever).policy_chat(
+                [{"role": "user", "content": SAMPLE.initial_question}],
+                tools=TOOLS,
+            )
+
+    def test_prompt_requires_user_language_for_questions_and_queries(self) -> None:
+        self.assertIn("Use the same\n  language as the user", RAC_SYSTEM_PROMPT)
+        self.assertIn("a passage. Use the same language as the user", RAC_SYSTEM_PROMPT)
 
     def test_tool_call_with_text_is_rejected(self) -> None:
         service = FakePolicyService(

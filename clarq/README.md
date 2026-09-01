@@ -29,7 +29,8 @@ cp config.example.env .env
 
 Set the policy API endpoint/model, the Huawei user simulator endpoint/model,
 and the existing Elasticsearch/embedding settings in `.env`. The policy must
-support Huawei's native `clarify_user` and `search_case` function calls.
+support Huawei's native `clarify_user`, `search_case`, and `Complete` function
+calls. `Complete` must be a native tool call with an empty arguments object.
 
 ## Run
 
